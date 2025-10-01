@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Flood Awareness Portal</title>
+    <style>
+        /* Keep format as your original but make it a bit more colourful */
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg,#e3f2fd 0%, #fffaf0 100%);
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(13,71,161,0.12);
+            width: 92%;
+            max-width: 900px;
+            padding: 22px 36px;
+            text-align: center;
+            margin-bottom: 22px;
+            border: 1px solid rgba(13,71,161,0.05);
+        }
+
+        header h1 {
+            color: #0d47a1;
+            margin: 0;
+        }
+
+        /* Welcome full-screen card */
+        #welcome-overlay {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(13,71,161,0.95), rgba(25,118,210,0.85));
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            z-index: 999;
+        }
+        #welcome-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px 36px;
+            width: 92%;
+            max-width: 720px;
+            text-align:center;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+        }
+        #welcome-card h1 { color:#0d47a1; margin-bottom: 8px; }
+        #welcome-card p { color:#333; margin-top: 0; }
+
+        #enter-button {
+            font-size: 20px;
+            padding: 14px 30px;
+            background: linear-gradient(90deg,#4caf50,#1976d2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 6px 18px rgba(25,118,210,0.25);
+        }
+        #enter-button:hover { transform: translateY(-2px); }
+
+        /* Helpline (kept format) */
+        #helpline-section { padding-bottom: 20px; display:none; }
+        #state-form {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 12px;
+            flex-wrap:wrap;
+        }
+        #state-input {
+            width: 60%;
+            min-width: 180px;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #cfe9ff;
+            border-radius: 6px;
+            box-shadow: inset 0 1px 0 rgba(0,0,0,0.02);
+        }
+        #search-button {
+            background: linear-gradient(90deg,#1976d2,#0d47a1);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 18px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #helpline-display { margin-top: 20px; text-align: left; }
+        #helpline-display h3 { color: #1976d2; }
+        #helpline-display ul { list-style-type:none; padding:0; margin:0; }
+        #helpline-display li {
+            background: linear-gradient(90deg,#e8f4ff,#f1faff);
+            margin-bottom:8px;
+            padding:10px;
+            border-radius:6px;
+            border-left: 6px solid #0d47a1;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+        }
+        #helpline-display a { text-decoration: none; color: #0d47a1; font-weight:600; }
+
+        /* Videos section */
+        #videos-section {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .video-container {
+            margin-bottom: 14px;
+        }
+        .video-container h3 {
+            color: #0d47a1;
+            margin-bottom: 6px;
+        }
+        .video-container iframe {
+            width: 100%;
+            max-width: 800px;
+            height: 450px;
+            border: none;
+            border-radius: 8px;
+        }
+
+        /* Quiz styling (same layout as your original) */
+        #game-section { padding-top: 20px; display:none; }
+        #quiz-area { text-align:left; }
+        .choices-container { display:flex; flex-direction:column; gap:10px; margin-top:20px; }
+        .choice-button {
+            background-color: #bbdefb;
+            border: none;
+            border-radius: 6px;
+            padding: 14px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform .08s, background-color .2s;
+            text-align:left;
+        }
+        .choice-button:hover { transform: translateY(-2px); background-color:#90caf9; }
+        .choice-button.correct { background-color: #4caf50; color:#fff; }
+        .choice-button.incorrect { background-color: #f44336; color:#fff; }
+
+        .reason {
+            margin-top: 10px;
+            font-style: italic;
+            color: #333;
+            text-align: left;
+            padding: 10px;
+            border-left: 3px solid #0d47a1;
+            background-color: #f1f8e9;
+            border-radius:6px;
+        }
+
+        #feedback { font-weight:bold; margin-top:15px; min-height:20px; }
+
+        #next-button, #restart-button, #start-quiz-button {
+            background: linear-gradient(90deg,#1976d2,#0d47a1);
+            color:white;
+            border:none;
+            border-radius:6px;
+            padding:12px 22px;
+            font-size:16px;
+            cursor:pointer;
+            margin-top:16px;
+        }
+        #next-button:hover, #restart-button:hover, #start-quiz-button:hover { opacity:0.95; }
+
+        /* Progress & timer */
+        #progress-container { width:100%; background:#eee; height:12px; margin-top:12px; border-radius:8px; overflow:hidden; }
+        #progress-bar { background: linear-gradient(90deg,#4caf50,#1976d2); height:12px; width:0%; transition:width .25s; }
+        #timer { font-weight:bold; color:#d32f2f; margin-top:10px; }
+
+        /* final results */
+        #result-container { display:none; text-align:center; }
+
+        @media (max-width:480px){
+            .container{ padding:16px; }
+            #state-input { width: 55%; }
+            .video-container iframe { height: 240px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Welcome overlay -->
+    <div id="welcome-overlay">
+        <div id="welcome-card">
+            <h1>Welcome to Flood Awareness Portal</h1>
+            <p>Learn flood safety and test your knowledge. Click Enter to continue.</p>
+            <button id="enter-button">Enter</button>
+        </div>
+    </div>
+
+    <!-- Helpline Section (keeps your format) -->
+    <div class="container" id="helpline-section">
+        <header>
+            <h1>Natural Disaster Helpline</h1>
+            <p>Type to search for helplines by state. Click on a number to call.</p>
+            <form id="state-form">
+                <input type="text" id="state-input" list="states-list" placeholder="e.g., Tamil Nadu">
+                <datalist id="states-list"></datalist>
+                <button type="submit" id="search-button">Search</button>
+            </form>
+        </header>
+        <div id="helpline-display"></div>
+
+        <!-- Videos below Helpline (visible by default) -->
+        <div id="videos-section">
+            <div class="video-container">
+                <h3>Before Flood</h3>
+                <iframe src="https://drive.google.com/file/d/1aCm70QLxbIbBjI1r5xi-3_KHUwqe_wBk/preview" allow="autoplay; fullscreen" allowfullscreen></iframe>
+            </div>
+            <div class="video-container">
+                <h3>During Flood</h3>
+                <iframe src="https://drive.google.com/file/d/1x9k0Age-3Uc8zyXa7pw4e-gLsPG6hGTT/preview" allow="autoplay; fullscreen" allowfullscreen></iframe>
+            </div>
+            <div class="video-container">
+                <h3>After Flood</h3>
+                <iframe src="https://drive.google.com/file/d/1pkLUKc6H56QDXJ2LjIdreignEoep2tNo/preview" allow="autoplay; fullscreen" allowfullscreen></iframe>
+            </div>
+        </div>
+
+        <div style="margin-top:14px;">
+            <button id="start-quiz-button">Start Quiz</button>
+        </div>
+    </div>
+
+    <!-- Game Section -->
+    <div class="container" id="game-section">
+        <header>
+            <h1>Flood Awareness Game</h1>
+            <p>Test your knowledge on what to do before, during, and after a flood.</p>
+        </header>
+
+        <div id="progress-container"><div id="progress-bar"></div></div>
+        <p id="timer"></p>
+
+        <main>
+            <div id="game-container">
+                <div id="quiz-area">
+                    <h2 id="question"></h2>
+                    <div id="choices" class="choices-container"></div>
+                    <p id="feedback"></p>
+                    <div id="reason-container"></div>
+                    <button id="next-button" style="display:none;">Next</button>
+                </div>
+            </div>
+
+            <div id="result-container">
+                <h2>Game Over!</h2>
+                <p>Your score for the last part: <strong id="part-score">0</strong> / <span id="part-total">10</span></p>
+                <p>Your overall score: <strong id="score">0</strong> / <span id="total-questions">30</span></p>
+                <button id="restart-button">Play Again</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Stop Disasters Game Section -->
+    <div class="container" id="stop-disasters-game">
+        <header>
+            <h1>Stop Disasters! Game</h1>
+            <p>Play this fun online game to learn about disaster prevention and flood safety.</p>
+        </header>
+        <a href="https://www.stopdisastersgame.org/" target="_blank">
+            <img src="https://www.stopdisastersgame.org/images/stopdisasters-thumbnail.jpg" 
+                 alt="Stop Disasters Game Preview" 
+                 style="width:100%; max-width:600px; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.15); cursor:pointer;">
+        </a>
+        <p style="margin-top:12px;">
+            Click the image above to play the <strong>Stop Disasters! Game</strong> on the official website.
+        </p>
+    </div>
+
+    <script>
+        // --- Helplines (exact format like original code you sent) ---
+        const helplines = {
+            "all-india": [
+                { service: "National Emergency Number", number: "112" },
+                { service: "National Disaster Management Authority (NDMA)", number: "1078" },
+                { service: "Ambulance", number: "102, 108" },
+                { service: "Fire", number: "101" },
+                { service: "Police", number: "100" }
+            ],
+            "andhra pradesh": [{ service: "State Disaster Management Control Room", number: "1070" }, { service: "Emergency Operation Centre", number: "0866-2488000" }],
+            "arunachal pradesh": [{ service: "State Emergency Operation Centre", number: "1070" }, { service: "Disaster Management Helpline", number: "0360-2210515" }],
+            "assam": [{ service: "State Emergency Operations Centre (SEOC)", number: "1070, 1079" }, { service: "Disaster Management Helpline", number: "0361-2237219" }],
+            "bihar": [{ service: "State Disaster Management Authority (SDMA)", number: "1070" }, { service: "SDMA Control Room", number: "0612-2547568" }],
+            "chhattisgarh": [{ service: "State Emergency Operations Centre", number: "1070" }, { service: "Disaster Management Helpline", number: "0771-2223846" }],
+            "goa": [{ service: "State Emergency Operations Centre (SEOC)", number: "1070" }, { service: "Emergency Management Helpline", number: "0832-2225383" }],
+            "gujarat": [{ service: "State Emergency Operations Centre (SEOC)", number: "1077" }, { service: "Emergency Management Helpline", number: "079-23251900" }],
+            "haryana": [{ service: "State Disaster Management Authority", number: "1070" }, { service: "Control Room", number: "0172-2545000" }],
+            "himachal pradesh": [{ service: "State Emergency Operations Centre (SEOC)", number: "1070" }, { service: "Disaster Management Helpline", number: "0177-2800100" }],
+            "jharkhand": [{ service: "State Emergency Operations Centre", number: "1070" }, { service: "SEOC Helpline", number: "0651-2281211" }],
+            "karnataka": [{ service: "Karnataka State Disaster Management Authority", number: "1070" }, { service: "SEOC Helpline", number: "080-1070" }],
+            "kerala": [{ service: "Kerala State Disaster Management Authority", number: "1077" }, { service: "Emergency Control Room", number: "0471-2444855" }],
+            "madhya pradesh": [{ service: "State Emergency Operations Centre", number: "1070" }, { service: "Disaster Management Helpline", number: "0755-2441119" }],
+            "maharashtra": [{ service: "State Emergency Operations Centre (SEOC)", number: "1070" }, { service: "SEOC Control Room", number: "022-22027990" }],
+            "manipur": [{ service: "State Emergency Operations Centre (SEOC)", number: "1070" }, { service: "Control Room", number: "0385-2443441" }],
+            "meghalaya": [{ service: "State Disaster Management Authority", number: "1070" }, { service: "Disaster Management Helpline", number: "0364-2221237" }],
+            "mizoram": [{ service: "State Emergency Operations Centre (SEOC)", number: "1070" }, { service: "SEOC Helpline", number: "0389-2335198" }],
+            "nagaland": [{ service: "State Disaster Management Authority", number: "1070" }, { service: "Disaster Management Helpline", number: "0370-2270083" }],
+            "odisha": [{ service: "State Emergency Operations Centre (SEOC)", number: "1070" }, { service: "SEOC Control Room", number: "0674-2534177" }],
+            "punjab": [{ service: "State Disaster Management Authority", number: "1070" }, { service: "Control Room", number: "0172-2740200" }],
+            "rajasthan": [{ service: "State Emergency Operations Centre", number: "1070" }, { service: "Disaster Management Helpline", number: "0141-2227000" }],
+            "sikkim": [{ service: "State Emergency Operations Centre", number: "1070" }, { service: "Emergency Control Room", number: "03592-221151" }],
+            "tamil nadu": [{ service: "State Emergency Operations Centre (SEOC)", number: "1070" }, { service: "SEOC Helpline", number: "044-28593990" }],
+            "telangana": [{ service: "State Disaster Management Authority", number: "1070" }, { service: "Emergency Operations Centre", number: "040-23450014" }],
+            "tripura": [{ service: "State Emergency Operations Centre (SEOC)", number: "1070" }, { service: "Emergency Management Helpline", number: "0381-2359405" }],
+            "uttar pradesh": [{ service: "Relief Commissioner's Control Room", number: "1070" }, { service: "Disaster Management Helpline", number: "0522-2212724" }],
+            "uttarakhand": [{ service: "State Emergency Operations Centre (SEOC)", number: "1070" }, { service: "SEOC Helpline", number: "0135-2710334" }],
+            "west bengal": [{ service: "State Emergency Operations Centre (SEOC)", number: "1070" }, { service: "SEOC Control Room", number: "033-22143526" }],
+            "andaman and nicobar islands": [{ service: "Emergency Operation Centre", number: "1070" }, { service: "Disaster Management Helpline", number: "03192-230100" }],
+            "chandigarh": [{ service: "Union Territory Administration", number: "1070" }, { service: "Disaster Management Helpline", number: "0172-2740200" }],
+            "delhi": [{ service: "State Emergency Operation Centre", number: "1077" }, { service: "SEOC Helpline", number: "011-23812030" }],
+            "jammu and kashmir": [{ service: "Emergency Operation Centre (Jammu)", number: "1070" }, { service: "Emergency Operation Centre (Srinagar)", number: "0194-2452138" }],
+            "ladakh": [{ service: "Emergency Operation Centre", number: "1070" }],
+            "lakshadweep": [{ service: "Union Territory Administration", number: "1070" }, { service: "Disaster Management Helpline", number: "04896-262100" }],
+            "puducherry": [{ service: "State Emergency Operations Centre", number: "1070" }, { service: "Emergency Management Helpline", number: "0413-2253000" }]
+        };
+
+        // --- Quiz questions (30) ---
+        const quizQuestions = [
+            { question: "What is the safest place for important items before a flood?", choices: ["Basement", "Waterproof container", "Drawer", "Cardboard box"], answer: "Waterproof container", reason: "A waterproof container protects your documents and valuables from water damage." },
+            { question: "What should you do if told to evacuate?", choices: ["Wait for friends", "Leave right away", "Stay at home", "Take pictures"], answer: "Leave right away", reason: "Always follow evacuation orders immediately to ensure your safety." },
+            { question: "How should you cross floodwater?", choices: ["Walk barefoot", "Walk fast", "Use a stick to check depth", "Swim across"], answer: "Use a stick to check depth", reason: "Floodwaters can hide dangerous items. Use a stick to test the ground." },
+            { question: "What is the first step after a flood?", choices: ["Turn on appliances", "Start cleaning", "Turn off power", "Open all windows"], answer: "Turn off power", reason: "Turning off the power prevents electric shocks." },
+            { question: "How can you help a trapped neighbor?", choices: ["Swim to them", "Use your boat", "Call emergency services", "Wait for help to arrive"], answer: "Call emergency services", reason: "It's not safe to rescue others yourself; let trained responders handle it." },
+            { question: "Should you drive through flooded roads?", choices: ["Yes, if it's shallow", "Yes, in a large vehicle", "No, never", "Yes, if you know the road"], answer: "No, never", reason: "Just 6 inches of moving water can sweep a person off their feet, and 12 inches can carry a vehicle away." },
+            { question: "Where is the safest place to be during a flood?", choices: ["In a basement", "On a low-level floor", "On the highest floor of your home", "In your car"], answer: "On the highest floor of your home", reason: "Move to higher ground or the highest level of a building to avoid rising floodwater." },
+            { question: "How should you prepare an emergency kit?", choices: ["With toys and games", "With food, water, and first aid", "With only clothes", "With valuables only"], answer: "With food, water, and first aid", reason: "An emergency kit should contain essential survival items in case you are stranded." },
+            { question: "What should you bring if you have to evacuate?", choices: ["Everything you own", "Important papers and a survival kit", "Just your phone", "Only clothes"], answer: "Important papers and a survival kit", reason: "Focus on bringing essential items and important documents that are hard to replace." },
+            { question: "Is flood insurance covered by a standard homeowner's policy?", choices: ["Yes, always", "No, it is a separate policy", "Only in some areas", "Sometimes"], answer: "No, it is a separate policy", reason: "Most standard homeowner's policies do not cover flood damage; a separate policy is needed." },
+            { question: "What is the best way to get flood warnings?", choices: ["From rumors", "From a friend", "From official weather alerts", "By looking outside"], answer: "From official weather alerts", reason: "Rely on official alerts from local weather services for accurate and timely information." },
+            { question: "Why should you avoid touching electrical equipment after a flood?", choices: ["It might get wet", "It can cause electrocution", "It might get dirty", "It might break"], answer: "It can cause electrocution", reason: "Floodwater can be electrically charged, creating a serious risk of electrocution." },
+            { question: "What should you do with food that has touched floodwater?", choices: ["Cook it well", "Throw it away", "Wash it thoroughly", "Freeze it"], answer: "Throw it away", reason: "Food and drinks that have come into contact with floodwater should be discarded to avoid sickness." },
+            { question: "What should you do if you are in a car and floodwater is rising?", choices: ["Stay inside and wait", "Try to restart the engine", "Get on the roof if needed", "Try to drive away"], answer: "Get on the roof if needed", reason: "If water is rising inside your vehicle, abandon it and seek refuge on the roof or higher ground." },
+            { question: "Should children play in floodwater?", choices: ["Yes, if supervised", "Yes, if it's not deep", "No, never", "Yes, if they have boots"], answer: "No, never", reason: "Floodwater can contain harmful bacteria, waste, and hidden dangers like debris and open manholes." },
+            { question: "What can you use to purify water after a flood?", choices: ["Nothing, it's unsafe", "Boil it", "Add salt to it", "Stir it"], answer: "Boil it", reason: "Boiling water is the most effective way to kill harmful bacteria and make it safe to drink." },
+            { question: "What should you do before the flood reaches your house?", choices: ["Leave outdoor furniture outside", "Move valuables to a high floor", "Leave doors and windows open", "Fill your basement with water"], answer: "Move valuables to a high floor", reason: "Move important possessions to a higher level to protect them from water damage." },
+            { question: "What is the most dangerous hazard during a flash flood?", choices: ["Strong wind", "The speed of the water", "The cold water", "The floating debris"], answer: "The speed of the water", reason: "Flash floods move very fast and can create a powerful current that is extremely dangerous." },
+            { question: "What animal might seek shelter in your home during a flood?", choices: ["Squirrel", "Bear", "Snake", "Cat"], answer: "Snake", reason: "Snakes and other small animals are common in floodwater and may enter homes to find dry ground." },
+            { question: "What is a good way to stay informed during a flood?", choices: ["Watch a movie", "Listen to a battery-powered radio", "Talk to neighbors", "Wait for someone to tell you"], answer: "Listen to a battery-powered radio", reason: "A battery-powered radio will work even if the power is out, keeping you updated with official news." },
+            { question: "What is the term for a fast-moving, sudden flood?", choices: ["Slow flood", "River flood", "Flash flood", "Urban flood"], answer: "Flash flood", reason: "A flash flood is a sudden, fast-moving flood that can occur with little to no warning." },
+            { question: "What should you do if your basement is flooding?", choices: ["Pump the water out quickly", "Wait for the flood to recede", "Call the fire department", "Let it fill completely"], answer: "Wait for the flood to recede", reason: "Pumping water out too fast can cause a house to collapse due to external pressure from saturated soil." },
+            { question: "Should you check on neighbors who are elderly or alone?", choices: ["No, it's their problem", "Yes, but only if they call", "Yes, if it is safe to do so", "Yes, even if it's unsafe"], answer: "Yes, if it is safe to do so", reason: "Checking on vulnerable neighbors is important, but only if you can do so without putting yourself in danger." },
+            { question: "What is a major cause of flood-related deaths?", choices: ["Drowning in a car", "Being hit by debris", "Illness from water", "Falling from a building"], answer: "Drowning in a car", reason: "Many flood-related deaths occur when people attempt to drive through flooded roads." },
+            { question: "What is the 'Turn Around, Don't Drown' slogan about?", choices: ["What to do after flood", "Driving in floodwater", "Swimming in floodwater", "Going boating in floodwater"], answer: "Driving in floodwater", reason: "It's a safety reminder to never drive or walk through flooded areas." },
+            { question: "What should you have in your emergency kit besides food and water?", choices: ["Matches and candles", "A flashlight and batteries", "Expensive electronics", "Family photo albums"], answer: "A flashlight and batteries", reason: "A flashlight and extra batteries are essential for staying safe in the dark after a power outage." },
+            { question: "What kind of clothes should you wear during cleanup?", choices: ["Regular clothes", "Old clothes", "Protective gloves and boots", "Just a swimsuit"], answer: "Protective gloves and boots", reason: "Protective gear keeps you safe from contamination and sharp debris in the floodwater." },
+            { question: "What can cause a river to flood?", choices: ["No rain", "Heavy rain", "A warm summer", "A calm river"], answer: "Heavy rain", reason: "Heavy and prolonged rainfall is a common cause of river flooding when water levels rise too high." },
+            { question: "What is one way to prevent flood damage to your home?", choices: ["Planting a garden", "Installing flood barriers", "Painting your house", "Adding more windows"], answer: "Installing flood barriers", reason: "Flood barriers and sandbags can prevent water from entering your home during a flood." },
+            { question: "What is a danger besides water?", choices: ["The sun", "Damaged bridges", "Cold weather", "Clear skies"], answer: "Damaged bridges", reason: "Bridges can be weakened by floodwaters and are dangerous to cross after a flood." },
+            { question: "How long does it take for a flood insurance policy to start?", choices: ["1 day", "1 week", "30 days", "It starts immediately"], answer: "30 days", reason: "Most flood insurance policies have a waiting period, so you must plan ahead." },
+            { question: "What should you do with damaged appliances?", choices: ["Use them carefully", "Throw them away", "Get them checked by an electrician", "Sell them"], answer: "Get them checked by an electrician", reason: "Do not use electrical appliances that have been wet until they are professionally checked." },
+            { question: "What is the purpose of a family communication plan?", choices: ["To share photos", "To know how to reach each other", "To play games", "To plan vacations"], answer: "To know how to reach each other", reason: "A family plan helps you communicate and find each other if you get separated during an emergency." },
+            { question: "What should you do if a flood warning is issued?", choices: ["Go for a walk", "Continue with your day", "Prepare to move to higher ground", "Ignore it"], answer: "Prepare to move to higher ground", reason: "A flood warning means flooding is happening or will happen soon, so you should prepare to act." }
+        ];
+
+        // --- DOM elements ---
+        const welcomeOverlay = document.getElementById('welcome-overlay');
+        const enterButton = document.getElementById('enter-button');
+        const helplineSection = document.getElementById('helpline-section');
+        const stateForm = document.getElementById('state-form');
+        const stateInput = document.getElementById('state-input');
+        const statesList = document.getElementById('states-list');
+        const helplineDisplay = document.getElementById('helpline-display');
+        const startQuizButton = document.getElementById('start-quiz-button');
+
+        const gameSection = document.getElementById('game-section');
+        const questionEl = document.getElementById('question');
+        const choicesEl = document.getElementById('choices');
+        const feedbackEl = document.getElementById('feedback');
+        const reasonContainer = document.getElementById('reason-container');
+        const nextButton = document.getElementById('next-button');
+        const resultContainer = document.getElementById('result-container');
+        const scoreEl = document.getElementById('score');
+        const partScoreEl = document.getElementById('part-score');
+        const partTotalEl = document.getElementById('part-total');
+        const totalQuestionsSpan = document.getElementById('total-questions');
+        const progressBar = document.getElementById('progress-bar');
+        const timerEl = document.getElementById('timer');
+        const restartButton = document.getElementById('restart-button');
+
+        // --- Initialize datalist with title-case names ---
+        const allStateNames = Object.keys(helplines).filter(s=>s!=='all-india').map(s => s.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '));
+        allStateNames.forEach(state => {
+            const option = document.createElement('option');
+            option.value = state;
+            statesList.appendChild(option);
+        });
+
+        // --- Quiz state ---
+        let currentIndex = 0;
+        let score = 0;
+        let partScore = 0;            // score for current part of 10
+        let overallScores = [0,0,0]; // stores part1, part2, part3
+        let timerId = null;
+        let timeLeft = 15;           // seconds per question
+        const QUESTION_TIME = 15;
+
+        // --- Helper to display helplines ---
+        function displayHelplines(stateName) {
+            const query = (stateName || '').toLowerCase().trim();
+            let helplinesToDisplay = helplines["all-india"];
+            let headingText = "All India Helplines";
+
+            if (query && helplines[query]) {
+                helplinesToDisplay = helplines[query];
+                headingText = `Helplines for ${stateName}`;
+            }
+
+            let displayHtml = `<h3>${headingText}</h3><ul>`;
+            helplinesToDisplay.forEach(h => {
+                const numbers = h.number.split(',').map(num => num.trim());
+                displayHtml += `<li><strong>${h.service}:</strong> `;
+                numbers.forEach((num, index) => {
+                    // keep linking to tel: with digits only
+                    displayHtml += `<a href="tel:${num.replace(/[^0-9+]/g, '')}">${num}</a>`;
+                    if (index < numbers.length - 1) displayHtml += ', ';
+                });
+                displayHtml += `</li>`;
+            });
+            displayHtml += `</ul>`;
+            helplineDisplay.innerHTML = displayHtml;
+        }
+
+        // --- Event listeners for helpline form and Enter button ---
+        stateForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            displayHelplines(stateInput.value || '');
+        });
+
+        // Show helpline and videos when welcome Enter clicked
+        enterButton.addEventListener('click', () => {
+            welcomeOverlay.style.display = 'none';
+            helplineSection.style.display = 'block';
+            // show default all-india helplines on entering
+            displayHelplines('');
+        });
+
+        // --- Quiz flow -- start quiz only when Start Quiz clicked ---
+        startQuizButton.addEventListener('click', () => {
+            helplineSection.style.display = 'none';
+            gameSection.style.display = 'block';
+            currentIndex = 0;
+            score = 0;
+            partScore = 0;
+            overallScores = [0,0,0];
+            totalQuestionsSpan.textContent = quizQuestions.length;
+            showQuestion();
+        });
+
+        // --- Timer helper ---
+        function startTimer() {
+            clearInterval(timerId);
+            timeLeft = QUESTION_TIME;
+            timerEl.textContent = `Time left: ${timeLeft}s`;
+            timerId = setInterval(() => {
+                timeLeft--;
+                timerEl.textContent = `Time left: ${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(timerId);
+                    // treat as timed out
+                    handleAnswer(null, true);
+                }
+            }, 1000);
+        }
+
+        function updateProgressBar() {
+            const percent = ((currentIndex) / quizQuestions.length) * 100;
+            progressBar.style.width = percent + '%';
+        }
+
+        // --- Show question ---
+        function showQuestion() {
+            clearInterval(timerId);
+            updateProgressBar();
+            const q = quizQuestions[currentIndex];
+            questionEl.textContent = q.question;
+            choicesEl.innerHTML = '';
+            feedbackEl.textContent = '';
+            reasonContainer.innerHTML = '';
+            nextButton.style.display = 'none';
+
+            // create buttons
+            const choices = q.choices.slice();
+            choices.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = 'choice-button';
+                btn.textContent = choice;
+                btn.addEventListener('click', () => handleAnswer(choice, false));
+                choicesEl.appendChild(btn);
+            });
+
+            // start timer
+            startTimer();
+        }
+
+        // --- Handle answer (selectedChoice === null => timed out) ---
+        function handleAnswer(selectedChoice, timedOut) {
+            clearInterval(timerId);
+            const q = quizQuestions[currentIndex];
+            const btns = Array.from(choicesEl.querySelectorAll('.choice-button'));
+            btns.forEach(btn => {
+                btn.disabled = true;
+                if (btn.textContent === q.answer) btn.classList.add('correct');
+                if (selectedChoice !== null && btn.textContent === selectedChoice && selectedChoice !== q.answer) btn.classList.add('incorrect');
+            });
+
+            if (selectedChoice === q.answer) {
+                score++;
+                partScore++;
+                feedbackEl.textContent = 'Correct!';
+            } else if (timedOut || selectedChoice === null) {
+                feedbackEl.textContent = "Time's up!";
+            } else {
+                feedbackEl.textContent = 'Incorrect.';
+            }
+
+            // show reason
+            const reasonDiv = document.createElement('div');
+            reasonDiv.className = 'reason';
+            reasonDiv.textContent = `Reason: ${q.reason}`;
+            reasonContainer.appendChild(reasonDiv);
+
+            // show Next button
+            nextButton.style.display = 'inline-block';
+        }
+
+        // --- Next button logic ---
+        nextButton.addEventListener('click', () => {
+            const partIndex = Math.floor(currentIndex / 10); // 0,1,2
+            currentIndex++;
+
+            if (currentIndex % 10 === 0) {
+                overallScores[partIndex] = partScore;
+                alert(`Part ${partIndex + 1} completed. Score for this part: ${partScore}/10`);
+                partScore = 0;
+            }
+
+            if (currentIndex < quizQuestions.length) {
+                showQuestion();
+            } else {
+                // ensure last part stored if needed
+                const lastPartIndex = Math.floor((quizQuestions.length - 1) / 10);
+                if (overallScores[lastPartIndex] === 0 && partScore >= 0) {
+                    overallScores[lastPartIndex] = overallScores[lastPartIndex] || 0;
+                }
+                showResults();
+            }
+        });
+
+        function showResults() {
+            gameSection.style.display = 'none';
+            resultContainer.style.display = 'block';
+            document.getElementById('part-score').textContent = overallScores[0] || 0;
+            document.getElementById('score').textContent = score;
+            document.getElementById('total-questions').textContent = quizQuestions.length;
+            clearInterval(timerId);
+        }
+
+        // Restart -> go back to helpline page
+        restartButton.addEventListener('click', () => {
+            currentIndex = 0;
+            score = 0;
+            partScore = 0;
+            overallScores = [0,0,0];
+            resultContainer.style.display = 'none';
+            helplineSection.style.display = 'block';
+            welcomeOverlay.style.display = 'none';
+            displayHelplines('');
+        });
+
+        // On page load: ensure result container hidden and helplines not shown until Enter
+        resultContainer.style.display = 'none';
+    </script>
+</body>
+</html>
